@@ -7,11 +7,46 @@ import Dashboard from './components/Dashboard';
 import { MemberFormData, MaritalStatus, Group } from './types';
 import { Database } from './lib/db';
 
+// Componente FieldBox definido fuera de App para evitar que se desmonte al escribir
+const FieldBox = ({ 
+  label, 
+  name, 
+  value, 
+  onChange, 
+  className = '', 
+  type = 'text',
+  readOnly = false
+}: { 
+  label: string, 
+  name: string, 
+  value: string, 
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void,
+  className?: string, 
+  type?: string,
+  readOnly?: boolean
+}) => (
+  <div className={`border-2 border-blue-900 px-3 py-1 flex items-center h-12 md:h-10 ${className}`}>
+    <span className="text-blue-900 font-bold text-xs whitespace-nowrap mr-2 uppercase">{label}:</span>
+    <input 
+      type={type} 
+      name={name}
+      value={value}
+      onChange={onChange}
+      readOnly={readOnly}
+      className={`flex-grow bg-transparent outline-none text-gray-800 text-sm font-medium h-full ${readOnly ? 'cursor-default' : ''}`}
+    />
+  </div>
+);
+
 const App: React.FC = () => {
   const getTodayStr = () => new Date().toISOString().split('T')[0];
 
+  const getNextSerialNumber = (count: number) => {
+    return (count + 1).toString().padStart(3, '0');
+  };
+
   const initialFormState: MemberFormData = {
-    serialNumber: '000',
+    serialNumber: '001',
     photo: null,
     name: '',
     address: '',
@@ -41,6 +76,16 @@ const App: React.FC = () => {
   useEffect(() => {
     loadSavedMembers();
   }, []);
+
+  // Actualizar el número de serie automáticamente cuando cambia la lista de miembros
+  useEffect(() => {
+    if (currentView === 'form' && !formData.id) {
+       setFormData(prev => ({
+         ...prev,
+         serialNumber: getNextSerialNumber(savedMembers.length)
+       }));
+    }
+  }, [savedMembers.length, currentView]);
 
   const loadSavedMembers = async () => {
     try {
@@ -73,8 +118,16 @@ const App: React.FC = () => {
     try {
       await Database.saveMember(formData);
       alert("Registro guardado exitosamente.");
-      setFormData({ ...initialFormState, updateDate: getTodayStr() });
-      loadSavedMembers();
+      
+      // Recargar lista para actualizar el contador global
+      const updatedMembers = await Database.getAllMembers();
+      setSavedMembers(updatedMembers);
+      
+      setFormData({ 
+        ...initialFormState, 
+        serialNumber: getNextSerialNumber(updatedMembers.length),
+        updateDate: getTodayStr() 
+      });
       setCurrentView('dashboard');
     } catch (err) {
       console.error("Error saving member", err);
@@ -105,19 +158,6 @@ const App: React.FC = () => {
       return matchesSearch && matchesGroup;
     });
   }, [savedMembers, searchTerm, filterGroup]);
-
-  const FieldBox = ({ label, name, value, className = '', type = 'text' }: { label: string, name: string, value: string, className?: string, type?: string }) => (
-    <div className={`border-2 border-blue-900 px-3 py-1 flex items-center h-12 md:h-10 ${className}`}>
-      <span className="text-blue-900 font-bold text-xs whitespace-nowrap mr-2 uppercase">{label}:</span>
-      <input 
-        type={type} 
-        name={name}
-        value={value}
-        onChange={handleInputChange}
-        className="flex-grow bg-transparent outline-none text-gray-800 text-sm font-medium h-full"
-      />
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
@@ -160,7 +200,13 @@ const App: React.FC = () => {
 
           <div className="flex items-center gap-2 md:gap-6">
             <button 
-              onClick={() => setCurrentView('form')}
+              onClick={() => {
+                setFormData({
+                  ...initialFormState,
+                  serialNumber: getNextSerialNumber(savedMembers.length)
+                });
+                setCurrentView('form');
+              }}
               className="bg-[#2b4c7e] text-white px-3 md:px-6 py-2 rounded-xl font-bold text-[10px] md:text-xs flex items-center gap-1 md:gap-2 hover:bg-[#1e3a8a] transition-colors shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,8 +289,8 @@ const App: React.FC = () => {
                             type="text" 
                             name="serialNumber" 
                             value={formData.serialNumber} 
-                            onChange={handleInputChange} 
-                            className="w-full text-center outline-none bg-transparent"
+                            readOnly
+                            className="w-full text-center outline-none bg-transparent cursor-default"
                           />
                         </div>
                       </div>
@@ -274,20 +320,20 @@ const App: React.FC = () => {
                       <PhotoUpload photo={formData.photo} onPhotoChange={handlePhotoChange} />
                     </div>
                     <div className="md:col-span-3 space-y-4">
-                      <FieldBox label="NOMBRE" name="name" value={formData.name} />
-                      <FieldBox label="DIRECCIÓN" name="address" value={formData.address} />
+                      <FieldBox label="NOMBRE" name="name" value={formData.name} onChange={handleInputChange} />
+                      <FieldBox label="DIRECCIÓN" name="address" value={formData.address} onChange={handleInputChange} />
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FieldBox label="BARRIO" name="neighborhood" value={formData.neighborhood} />
-                        <FieldBox label="CIUDAD" name="city" value={formData.city} />
+                        <FieldBox label="BARRIO" name="neighborhood" value={formData.neighborhood} onChange={handleInputChange} />
+                        <FieldBox label="CIUDAD" name="city" value={formData.city} onChange={handleInputChange} />
                       </div>
-                      <FieldBox label="DEPARTAMENTO" name="department" value={formData.department} />
+                      <FieldBox label="DEPARTAMENTO" name="department" value={formData.department} onChange={handleInputChange} />
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FieldBox label="CELULAR" name="cellphone" value={formData.cellphone} />
-                      <FieldBox label="EMAIL" name="email" value={formData.email} />
+                      <FieldBox label="CELULAR" name="cellphone" value={formData.cellphone} onChange={handleInputChange} />
+                      <FieldBox label="EMAIL" name="email" value={formData.email} onChange={handleInputChange} />
                     </div>
 
                     <div className="border-2 border-blue-900 px-3 py-2 flex flex-col md:flex-row items-stretch md:items-center min-h-[44px] gap-2">
