@@ -12,21 +12,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onPhotoChange(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const startCamera = async () => {
     setIsCapturing(true);
     try {
-      // Uso de API nativa moderna
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: "user" } 
       });
@@ -34,9 +22,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
-      // Manejo nativo de errores (DOMException)
       console.error("Acceso a cámara denegado:", err);
-      alert("No se pudo acceder a la cámara. Por favor, revisa los permisos de tu dispositivo.");
+      alert("No se pudo acceder a la cámara.");
       setIsCapturing(false);
     }
   };
@@ -45,8 +32,6 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      
-      // Ajuste nativo de resolución
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
@@ -95,7 +80,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
               onClick={() => onPhotoChange(null)}
               className="bg-red-600 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase"
             >
-              Quitar Foto
+              Quitar
             </button>
           </div>
         </>
@@ -107,19 +92,19 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
-          <span className="text-[10px] text-blue-900 font-black uppercase tracking-widest">Añadir Foto</span>
+          <span className="text-[10px] text-blue-900 font-black uppercase">Foto</span>
           <div className="flex flex-col gap-2">
             <button 
               onClick={startCamera}
-              className="bg-blue-900 text-white py-2 px-3 rounded-xl text-[9px] font-bold uppercase shadow-sm active:scale-95 transition-transform"
+              className="bg-blue-900 text-white py-2 px-3 rounded-lg text-[9px] font-bold uppercase"
             >
-              Usar Cámara
+              Cámara
             </button>
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-blue-900 text-blue-900 py-1.5 px-3 rounded-xl text-[9px] font-bold uppercase active:scale-95 transition-transform"
+              className="border border-blue-900 text-blue-900 py-1.5 px-3 rounded-lg text-[9px] font-bold uppercase"
             >
-              De Galería
+              Archivo
             </button>
           </div>
         </div>
@@ -129,7 +114,14 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
         ref={fileInputRef} 
         className="hidden" 
         accept="image/*" 
-        onChange={handleFileChange}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => onPhotoChange(reader.result as string);
+            reader.readAsDataURL(file);
+          }
+        }}
       />
       <canvas ref={canvasRef} className="hidden" />
     </div>
