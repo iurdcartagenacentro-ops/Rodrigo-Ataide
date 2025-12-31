@@ -22,8 +22,11 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
-      console.error("Acceso a cámara denegado:", err);
-      alert("No se pudo acceder a la cámara.");
+      // Uso de DOMException nativa del navegador
+      if (err instanceof DOMException) {
+        console.error(`Error nativo de cámara: ${err.name} - ${err.message}`);
+      }
+      alert("No se pudo acceder a la cámara. Por favor, verifique los permisos.");
       setIsCapturing(false);
     }
   };
