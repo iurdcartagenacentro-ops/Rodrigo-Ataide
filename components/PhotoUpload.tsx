@@ -26,12 +26,17 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
   const startCamera = async () => {
     setIsCapturing(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Uso de API nativa moderna
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "user" } 
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
-      console.error("Error accessing camera", err);
+      // Manejo nativo de errores (DOMException)
+      console.error("Acceso a cámara denegado:", err);
+      alert("No se pudo acceder a la cámara. Por favor, revisa los permisos de tu dispositivo.");
       setIsCapturing(false);
     }
   };
@@ -40,12 +45,14 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
+      
+      // Ajuste nativo de resolución
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg');
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         onPhotoChange(dataUrl);
         stopCamera();
       }
@@ -61,55 +68,58 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
   };
 
   return (
-    <div className="relative w-40 h-48 border-4 border-blue-900 bg-gray-100 flex flex-col items-center justify-center overflow-hidden group">
+    <div className="relative w-40 h-48 border-4 border-blue-900 bg-gray-100 flex flex-col items-center justify-center overflow-hidden rounded-lg shadow-inner group">
       {isCapturing ? (
         <div className="absolute inset-0 z-20 bg-black flex flex-col">
           <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 px-2">
             <button 
               onClick={capturePhoto}
-              className="bg-red-600 text-white p-2 rounded-full text-xs font-bold"
+              className="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-black shadow-lg uppercase"
             >
               Capturar
             </button>
             <button 
               onClick={stopCamera}
-              className="bg-gray-600 text-white p-2 rounded-full text-xs"
+              className="bg-gray-600 text-white px-4 py-2 rounded-full text-xs font-bold uppercase"
             >
-              Cancelar
+              Cerrar
             </button>
           </div>
         </div>
       ) : photo ? (
         <>
           <img src={photo} alt="Member" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <button 
               onClick={() => onPhotoChange(null)}
-              className="text-white text-xs bg-red-600 px-2 py-1 rounded"
+              className="bg-red-600 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase"
             >
-              Quitar
+              Quitar Foto
             </button>
           </div>
         </>
       ) : (
-        <div className="text-center p-2 flex flex-col gap-2">
-          <svg className="w-12 h-12 text-blue-900 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span className="text-[10px] text-blue-900 font-bold leading-tight">SUBIR FOTO</span>
-          <div className="flex flex-col gap-1">
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="text-[9px] bg-blue-900 text-white py-1 px-2 rounded hover:bg-blue-800"
-            >
-              Galería
-            </button>
+        <div className="text-center p-4 flex flex-col gap-3">
+          <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-900">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <span className="text-[10px] text-blue-900 font-black uppercase tracking-widest">Añadir Foto</span>
+          <div className="flex flex-col gap-2">
             <button 
               onClick={startCamera}
-              className="text-[9px] border border-blue-900 text-blue-900 py-1 px-2 rounded hover:bg-blue-50"
+              className="bg-blue-900 text-white py-2 px-3 rounded-xl text-[9px] font-bold uppercase shadow-sm active:scale-95 transition-transform"
             >
-              Cámara
+              Usar Cámara
+            </button>
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-blue-900 text-blue-900 py-1.5 px-3 rounded-xl text-[9px] font-bold uppercase active:scale-95 transition-transform"
+            >
+              De Galería
             </button>
           </div>
         </div>

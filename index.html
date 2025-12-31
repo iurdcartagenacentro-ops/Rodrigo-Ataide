@@ -3,12 +3,16 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Registro de Miembros Universal</title>
-    <!-- Configuración para PWA/App Móvil -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Universal - Gestión de Miembros</title>
+    
+    <!-- Configuración Nativa de Web App -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Universal">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2b4c7e">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -17,22 +21,22 @@
             background-color: #f3f4f6;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: contain;
+            user-select: none;
+        }
+        input, select, textarea {
+            user-select: text;
         }
         @media print {
-            .no-print {
-                display: none !important;
-            }
-            .print-shadow-none {
-                box-shadow: none !important;
-            }
+            .no-print { display: none !important; }
         }
-        /* Ocultar barra de desplazamiento pero mantener funcionalidad */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Prevenir zoom automático en iOS al enfocar inputs */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
         }
     </style>
 <script type="importmap">
