@@ -120,14 +120,17 @@ const App: React.FC = () => {
       alert("Registro guardado exitosamente.");
       
       // Recargar lista para actualizar el contador global
-      const updatedMembers = await Database.getAllMembers();
-      setSavedMembers(updatedMembers);
+      const members = await Database.getAllMembers();
+      setSavedMembers(members);
       
+      // LIMPIAR TOTALMENTE LA FICHA PARA EL PRÓXIMO REGISTRO
       setFormData({ 
         ...initialFormState, 
-        serialNumber: getNextSerialNumber(updatedMembers.length),
+        serialNumber: getNextSerialNumber(members.length),
         updateDate: getTodayStr() 
       });
+      
+      // Opcional: Volver al Dashboard o quedarse en formulario limpio
       setCurrentView('dashboard');
     } catch (err) {
       console.error("Error saving member", err);
@@ -317,7 +320,12 @@ const App: React.FC = () => {
                   {/* Form Body */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                     <div className="md:col-span-1 flex justify-center md:justify-start">
-                      <PhotoUpload photo={formData.photo} onPhotoChange={handlePhotoChange} />
+                      {/* Usamos serialNumber como KEY para resetear el componente PhotoUpload tras guardar */}
+                      <PhotoUpload 
+                        key={`photo-${formData.id || formData.serialNumber}`} 
+                        photo={formData.photo} 
+                        onPhotoChange={handlePhotoChange} 
+                      />
                     </div>
                     <div className="md:col-span-3 space-y-4">
                       <FieldBox label="NOMBRE" name="name" value={formData.name} onChange={handleInputChange} />
@@ -422,7 +430,11 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="w-full md:w-[400px] order-1 md:order-2">
-                      <SignaturePad onSignatureChange={handleSignatureChange} />
+                      {/* Usamos serialNumber como KEY para resetear el SignaturePad tras guardar */}
+                      <SignaturePad 
+                        key={`sig-${formData.id || formData.serialNumber}`} 
+                        onSignatureChange={handleSignatureChange} 
+                      />
                     </div>
                   </div>
 
@@ -438,7 +450,10 @@ const App: React.FC = () => {
                         {isSaving ? 'GUARDANDO...' : 'GUARDAR REGISTRO'}
                       </button>
                       <button 
-                        onClick={() => setCurrentView('dashboard')}
+                        onClick={() => {
+                          setFormData({...initialFormState, serialNumber: getNextSerialNumber(savedMembers.length)});
+                          setCurrentView('dashboard');
+                        }}
                         className="bg-gray-100 text-gray-500 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-gray-200 transition-colors"
                       >
                         CANCELAR
