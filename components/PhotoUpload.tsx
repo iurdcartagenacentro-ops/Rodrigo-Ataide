@@ -9,24 +9,24 @@ interface PhotoUploadProps {
 const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const startCamera = async () => {
+  const startCamera = async (mode: "user" | "environment" = facingMode) => {
     setIsCapturing(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "user" } 
+        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } } 
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
-      // Uso de DOMException nativa del navegador
       if (err instanceof DOMException) {
         console.error(`Error nativo de cámara: ${err.name} - ${err.message}`);
       }
-      alert("No se pudo acceder a la cámara. Por favor, verifique los permisos.");
+      alert("No se pudo acceder a la cámara o el dispositivo solicitado no está disponible.");
       setIsCapturing(false);
     }
   };
@@ -51,25 +51,49 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
     setIsCapturing(false);
+  };
+
+  const toggleCamera = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(nextMode);
+    if (isCapturing) {
+      stopCamera();
+      // Pequeño delay para permitir que el hardware de la cámara se libere antes de reiniciar
+      setTimeout(() => startCamera(nextMode), 100);
+    }
   };
 
   return (
     <div className="relative w-40 h-48 border-4 border-blue-900 bg-gray-100 flex flex-col items-center justify-center overflow-hidden rounded-lg shadow-inner group">
       {isCapturing ? (
         <div className="absolute inset-0 z-20 bg-black flex flex-col">
+          {/* Botón de cambio de cámara en la parte superior para máxima visibilidad */}
+          <button 
+            onClick={toggleCamera}
+            className="absolute top-2 right-2 z-30 bg-black/60 backdrop-blur-md text-white p-2.5 rounded-full border border-white/20 hover:bg-black/80 transition-all shadow-xl active:scale-90"
+            aria-label="Cambiar Cámara"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+
           <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 px-2">
+          
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-2 z-30">
             <button 
               onClick={capturePhoto}
-              className="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-black shadow-lg uppercase"
+              className="bg-blue-600 text-white px-4 py-2.5 rounded-full text-[11px] font-black shadow-lg uppercase tracking-wider active:scale-95 transition-transform"
             >
               Capturar
             </button>
             <button 
               onClick={stopCamera}
-              className="bg-gray-600 text-white px-4 py-2 rounded-full text-xs font-bold uppercase"
+              className="bg-gray-700 text-white px-4 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider active:scale-95 transition-transform"
             >
               Cerrar
             </button>
@@ -95,19 +119,19 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ photo, onPhotoChange }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
-          <span className="text-[10px] text-blue-900 font-black uppercase">Foto</span>
+          <span className="text-[10px] text-blue-900 font-black uppercase">Foto del Miembro</span>
           <div className="flex flex-col gap-2">
             <button 
-              onClick={startCamera}
-              className="bg-blue-900 text-white py-2 px-3 rounded-lg text-[9px] font-bold uppercase"
+              onClick={() => startCamera()}
+              className="bg-blue-900 text-white py-2 px-3 rounded-lg text-[10px] font-black uppercase shadow-md active:scale-95 transition-transform"
             >
-              Cámara
+              Abrir Cámara
             </button>
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="border border-blue-900 text-blue-900 py-1.5 px-3 rounded-lg text-[9px] font-bold uppercase"
+              className="border-2 border-blue-900 text-blue-900 py-1.5 px-3 rounded-lg text-[10px] font-black uppercase active:bg-blue-50 transition-colors"
             >
-              Archivo
+              Subir Archivo
             </button>
           </div>
         </div>
