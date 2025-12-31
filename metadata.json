@@ -1,0 +1,7 @@
+{
+  "name": "Registro de Miembros Universal",
+  "description": "Una aplicación web para el registro digital de miembros, inspirada en el formulario físico de la Iglesia Universal, con captura de fotos y firma digital.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
